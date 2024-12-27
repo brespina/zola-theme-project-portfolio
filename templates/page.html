@@ -56,9 +56,9 @@
       {{ page.content | safe }}
     </div>
 
-    <!-- Skills & Technologies Section -->
-    {% if page.taxonomies.skills %}
-    {{ macros::project_list_skills(skills=page.taxonomies.skills, lang=lang) }}
+    <!-- Testimonials section -->
+    {% if page.taxonomies.testimonials %}
+    {{ macros::project_list_testimonials(testimonials=page.taxonomies.testimonials, lang=lang) }}
     {% endif %}
   </div>
 

@@ -1,141 +1,173 @@
-<!-- Shows a list of all given terms of a taxonomy. An icon is shown in front of each term. This icon needs to be given as an SVG path. -->
-{% macro terms_list(terms, icon_definition, maximum_amount='', minimum_amount='') %}
+{# 
+Common Components
+These macros are used across the site for consistent styling and functionality 
+#}
+
+{# Base Terms List - Displays taxonomy terms with icons #}
+{% macro terms_list(terms, icon_definition, maximum_amount=100, minimum_amount=1)%}
 <div class="flex flex-wrap justify-center sm:flex-row flex-col sm:gap-x-7 gap-y-5 mt-6 mb-6">
-    {% for term in terms %}
-    {# Show term only if its item count is between minimum and maximum amount (if those parameters are given) #}
-    {% if (not minimum_amount or term.pages | length >= minimum_amount) and (not maximum_amount or term.pages | length <= maximum_amount) %}
-        <a href="{{ term.permalink | safe }}" class="flex items-center space-x-2">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ icon_definition }}">
-            </path>
-        </svg>
-        <span class="text-bold">{{ term.name }} <sup>{{ term.pages | length }}</sup></span>
-        </a>
-    {% endif %}
-    {% endfor %}
+	{% for term in terms %}
+	{# Calculate whether to show this term based on page count #}
+	{% set pages_count = term.pages | length %}
+	{% set should_show = true %}
+
+	{% if minimum_amount is defined %}
+	{% set should_show = should_show and pages_count >= minimum_amount %}
+	{% endif %}
+
+	{% if maximum_amount is defined %}
+	{% set should_show = should_show and pages_count <= maximum_amount %}
+	{% endif %}
+
+	{% if should_show %}
+	<a href="{{ term.permalink | safe }}" class="flex items-center space-x-2">
+		<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ icon_definition }}"></path>
+		</svg>
+		<span class="text-bold">{{ term.name }} <sup>{{ pages_count }}</sup></span>
+	</a>
+	{% endif %}
+	{% endfor %}
 </div>
 {% endmacro %}
 
-<!-- Shows a list of all given terms of a taxonomy with the projects terms icon in front of each term. -->
+{# Project Terms List - Uses folder icon #}
 {% macro terms_list_projects(terms) %}
-{{ macros::terms_list(terms=terms, icon_definition="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10") }}
+{% set project_icon = "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" %}
+{{ macros::terms_list(terms=terms, icon_definition=project_icon) }}
 {% endmacro %}
 
-<!-- Shows a list of all given terms of a taxonomy with the skills terms icon in front of each term. -->
-{% macro terms_list_skills(terms, maximum_amount='', minimum_amount='') %}
-{{ macros::terms_list(terms=terms, maximum_amount=maximum_amount, minimum_amount=minimum_amount, icon_definition="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z") }}
+{# testimonials Terms List - Uses tag icon #}
+{% macro terms_list_testimonials(terms, maximum_amount=100, minimum_amount=1) %}
+{% set testimonials_icon = "M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" %}
+{{ macros::terms_list(terms=terms, maximum_amount=maximum_amount, minimum_amount=minimum_amount, icon_definition=testimonials_icon) }}
 {% endmacro %}
 
-
-<!-- Shows a list of all given terms with at least 'threshold' items of a taxonomy with the skills terms icon in front of each term. -->
-{% macro terms_list_skills_main(terms, threshold) %}
-{{ macros::terms_list_skills(terms=terms, minimum_amount=threshold) }}
+{#  Testimonials List with Threshold Filters #}
+{% macro terms_list_testimonials_main(terms, threshold) %}
+{{ macros::terms_list_testimonials(terms=terms, minimum_amount=threshold) }}
 {% endmacro %}
 
-<!-- Shows a list of all given terms with less than 'threshold' items of a taxonomy with the skills terms icon in front of each term. -->
-{% macro terms_list_skills_other(terms, threshold) %}
-{{ macros::terms_list_skills(terms=terms, maximum_amount=threshold-1) }}
+{% macro terms_list_testimonials_other(terms, threshold) %}
+{{ macros::terms_list_testimonials(terms=terms, maximum_amount=threshold-1) }}
 {% endmacro %}
 
-<!-- Shows the given skills that are part of a project. -->
-{% macro project_list_skills(skills, lang) %}
+{# Project Testimonials List - Shows testimonials associated with a project #}
+{% macro project_list_testimonials(testimonials) %}
 <div class="flex sm:flex-row flex-col flex-wrap sm:gap-x-7">
-    {% for skill in skills %}
-    <a class="text-gray-900 dark:text-gray-400 flex py-1 items-center"
-        href="{{ get_taxonomy_url(kind='skills', name=skill, lang=lang) }}">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z">
-            </path>
-        </svg>
-        <span class="pl-1">{{skill}}</span>
-    </a>
-    {% endfor %}
+	{% for testimonial in testimonials %}
+	<a class="text-gray-900 dark:text-gray-400 flex py-1 items-center" 
+		href="{{ get_taxonomy_url(kind='testimonials', name=testimonial) }}">
+		<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+			d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z">
+			</path>
+		</svg>
+		<span class="pl-1">{{testimonial}}</span>
+	</a>
+	{% endfor %}
 </div>
 {% endmacro %}
 
-<!-- Shows the overview tile for a project page. -->
+{# Project Display Tile #}
 {% macro project_tile(page) %}
-<div
-    class="border border-2 border-gray-200 dark:border-black rounded-xl p-5 shadow-2xl transform transition duration-500 hover:scale-105 bg-gray-200 dark:bg-gray-800">
-    <div class="flex flex-col justify-center">
-        <h2 class="text-2xl text-bold pt-0"><a href='{{ page.permalink }}'>{{ page.title }}</a></h2>
+<div class="border border-2 border-gray-200 dark:border-black rounded-xl p-5 shadow-2xl 
+	transform transition duration-500 hover:scale-105 bg-gray-200 dark:bg-gray-800">
+	<div class="flex flex-col justify-center">
+		{# Project Title #}
+		<h2 class="text-2xl text-bold pt-0">
+			<a href='{{ page.permalink }}'>{{ page.title }}</a>
+		</h2>
 
-        <!-- Project type and date -->
-        {% if page.extra.date_start %}
-        <div class="flex space-x-3 text-gray-900 dark:text-gray-400">
-            <span class="mr-4">
-                {% if page.taxonomies.projects %}
-                <span>
-                    {% for project in page.taxonomies.projects %}
-                    <a class="text-gray-900 dark:text-gray-400 flex py-1 items-center"
-                        href="{{ get_taxonomy_url(kind='projects', name=project, lang=lang) }}">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
-                            </path>
-                        </svg>
-                        <span class="pl-1">{{project}}</span>
-                    </a>
-                    {% endfor %}
-                </span>
-                {% endif %}
-            </span>
-            <span class="flex items-center">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
-                    </path>
-                </svg>
-                <span class="ml-1"><time datetime="{{ page.date }}">{% if page.extra.date_start |
-                        date(format='%Y') != page.date |
-                        date(format='%Y') %}{{
-                        page.extra.date_start | date(format='%Y') }} - {{ page.date | date(format='%Y')
-                        }}{% else %}{{ page.date | date(format='%Y') }}{% endif %}</time></span>
-            </span>
-        </div>
-        {% endif %}
+		{# Project Metadata (Date and Type) #}
+		{% if page.extra.date_start %}
+		<div class="flex space-x-3 text-gray-900 dark:text-gray-400">
+			{# Project Type Tags #}
+			<span class="mr-4">
+				{% if page.taxonomies.projects %}
+				<span>
+					{% for project in page.taxonomies.projects %}
+					<a class="text-gray-900 dark:text-gray-400 flex py-1 items-center" 
+						href="{{ get_taxonomy_url(kind='projects', name=project) }}">
+						<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+							d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+							</path>
+						</svg>
+						<span class="pl-1">{{project}}</span>
+					</a>
+					{% endfor %}
+				</span>
+				{% endif %}
+			</span>
 
-        <span>
-            {% if page.extra.image %}
-            <img class="h-auto w-48 rounded-lg lg:float-right lg:ml-4 my-1"
-                src="{{ config.base_url | trim_end_matches(pat='/') | safe }}/images/{{page.extra.image}}" />
-            {% endif %}
-            <p class="text-bold mt-2">{{ page.description | safe }}</p>
+			{# Project Date Range #}
+			<span class="flex items-center">
+				<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+					d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+					</path>
+				</svg>
+				<span class="ml-1">
+					<time datetime="{{ page.date }}">
+						{% if page.extra.date_start | date(format='%Y') != page.date | date(format='%Y') %}
+						{{ page.extra.date_start | date(format='%Y') }} - {{ page.date | date(format='%Y') }}
+						{% else %}
+						{{ page.date | date(format='%Y') }}
+						{% endif %}
+					</time>
+				</span>
+			</span>
+		</div>
+		{% endif %}
 
-            <!-- Read more link -->
-            <div class="flex items-center w-1/3 mb-2">
-                <a class="flex" href='{{ page.permalink }}'>
-                    {{ trans(key="read_more", lang=lang) }}
-                    <svg class="w-6 h-6 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M14 5l7 7m0 0l-7 7m7-7H3">
-                        </path>
-                    </svg>
-                </a>
-            </div>
+		{# Project Content #}
+		<span>
+			{# Project Image #}
+			{% if page.extra.image %}
+			<img class="h-auto w-48 rounded-lg lg:float-right lg:ml-4 my-1" 
+			src="{{ config.base_url | trim_end_matches(pat='/') | safe }}/images/{{page.extra.image}}" />
+			{% endif %}
 
-            <!-- Skills & Technologies Section -->
-            {% if page.taxonomies.skills %}
-            <h2>{{ trans(key="skills_technologies", lang=lang) }}</h2>
-            {{ macros::project_list_skills(skills=page.taxonomies.skills, lang=lang) }}
-            {% endif %}
+			{# Project Description #}
+			<p class="text-bold mt-2">{{ page.description | safe }}</p>
 
-        </span>
-    </div>
+			{# Read More Link #}
+			<div class="flex items-center w-1/3 mb-2">
+				<a class="flex" href='{{ page.permalink }}'>
+					Read More
+					<svg class="w-6 h-6 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+					</svg>
+				</a>
+			</div>
+
+			{# Testimonials  #}
+			{% if page.taxonomies.testimonials %}
+			<h2>Testimonials</h2>
+			{{ macros::project_list_testimonials(testimonials=page.taxonomies.testimonials) }}
+			{% endif %}
+		</span>
+	</div>
 </div>
 {% endmacro %}
 
+{# Navigation Button #}
 {% macro navbar_button(url, text) %}
-{%if lang == config.default_language %}{% set language_url_part = '' %}{% else %}{% set language_url_part = lang %}{% endif %} {# Empty for default language and language for others. #}
-<a href="{{ config.base_url | trim_end_matches(pat='/') | safe }}/{{ language_url_part }}/{{ url }}"
-    {% if current_path and ((url != "" and url in current_path) or (url == "" and current_path | trim_end_matches(pat=lang ~'/') | trim_end_matches(pat='/') == "")) %}
-    class="bg-gray-900 text-white px-3 py-2 rounded-md text-sm font-medium" {# Highlight button, if button URL is part of the current path. #}
+    {% set current = current_path | default(value="") %}
+    {% set is_current_page = url and url in current %}
+    {% set is_home_page = not url and current == "" %}
+    
+    {% set button_class = "px-3 py-2 rounded-md text-sm font-medium" %}
+    {% if is_current_page or is_home_page %}
+        {% set button_class = button_class ~ " bg-gray-900 text-white" %}
     {% else %}
-    class="text-gray-800 dark:text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+        {% set button_class = button_class ~ " text-gray-800 dark:text-gray-300 hover:bg-gray-700 hover:text-white" %}
     {% endif %}
-    >{{ text }}</a>
+
+    <a href="{{ config.base_url | trim_end_matches(pat='/') | safe }}/{{ url }}" 
+       class="{{ button_class }}">
+        {{ text }}
+    </a>
 {% endmacro %}
+
